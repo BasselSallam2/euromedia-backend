@@ -1,0 +1,13 @@
+import { {{Name}}Model } from "@/modules/{{name}}/{{name}}.schema";
+import { GenericServices } from "@/services/genericServices";
+import type { I{{Name}} } from "@modules/{{name}}/{{name}}.interface";
+import { Model } from "mongoose";
+export class {{Name}}Service extends GenericServices<I{{Name}}> {
+    constructor(model: Model<I{{Name}}>) {
+        super(model);
+    }
+
+
+}
+
+export default new {{Name}}Service({{Name}}Model);

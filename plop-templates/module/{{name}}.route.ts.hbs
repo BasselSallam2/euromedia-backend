@@ -1,0 +1,17 @@
+import {protect , allowedWith } from "@/middlewares/protect";
+import {{Name}}Controller from "@modules/{{name}}/{{name}}.controller";
+import { Router } from "express";
+import { permissions } from "@/utils/interfaces";
+const router = Router();
+
+router.route("/")
+.post(protect, allowedWith(permissions.{{upperName}}CREATE), {{Name}}Controller.createOne)
+.get(protect, allowedWith(permissions.{{upperName}}READ), {{Name}}Controller.getAll);
+
+router
+    .route("/:id")
+    .get(protect, allowedWith(permissions.{{upperName}}READ), {{Name}}Controller.getOne)
+    .put(protect, allowedWith(permissions.{{upperName}}UPDATE), {{Name}}Controller.updateById)
+    .delete(protect, allowedWith(permissions.{{upperName}}DELETE), {{Name}}Controller.deleteById);
+
+export default router;

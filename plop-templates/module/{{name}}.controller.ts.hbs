@@ -1,0 +1,13 @@
+import {{name}}Service from "@modules/{{name}}/{{name}}.services";
+import { GenericController } from "@shared/genericController";
+
+
+export class {{Name}}Controller extends GenericController<typeof {{name}}Service> {
+    constructor() {
+        super({{name}}Service);
+       
+    }
+
+}
+
+export default new {{Name}}Controller();

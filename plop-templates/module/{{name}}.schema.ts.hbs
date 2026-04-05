@@ -1,0 +1,17 @@
+import type { I{{Name}} } from "@/modules/{{name}}/{{name}}.interface";
+import { Schema, model } from "mongoose";
+
+
+const {{name}}Schema = new Schema<I{{Name}}>(
+    {
+        
+    },
+    {
+        timestamps: true,
+    },
+);
+
+
+const {{Name}}Model = model<I{{Name}}>("{{Name}}", {{name}}Schema);
+
+export { {{Name}}Model };

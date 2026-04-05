@@ -1,0 +1,13 @@
+{
+    "name": "الاسم",
+    "category": "التصنيف",
+    "description": "الوصف",
+    "imageUrl": "الصورة",
+    "variance": "الاحجام",
+    "addOns": "الاضافات",
+    "deleted": "المحذوف",
+    "active": "النشط",
+    "createdAt": "تاريخ الإنشاء",
+    "updatedAt": "تاريخ التحديث"
+
+}

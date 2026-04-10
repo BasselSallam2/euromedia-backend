@@ -1,9 +1,9 @@
 import { Document } from "mongoose";
 
 interface IBrand extends Document {
-name: string;
-image: string;
-metadata: any;
+    name: string;
+    image: string;
+    metadata: any;
 }
 
 

@@ -89,7 +89,7 @@ class GenericController<TService extends GenericServices<any>> {
         if (req.user) {
             const { _id } = req.user as { _id: string };
             if (id && _id) {
-               
+
             }
         }
         apiResponse.deleteOne(res, t, id as string);

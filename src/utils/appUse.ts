@@ -3,6 +3,7 @@ import cors from "cors";
 import type { Express } from "express";
 import express from "express";
 import helmet from "helmet";
+import path from "path";
 
 import { logger } from "@utils/logger";
 import appRoutes from "@utils/routes";
@@ -32,16 +33,17 @@ const speedLimiter = slowDown({
 });
 
 function Appuse(app: Express) {
- 
 
- 
+
+
     app.use(middleware.handle(i18next));
     app.use(cookieParser("secret-key"));
     app.use(express.json({ limit: "10Kb" }));
     app.use(express.urlencoded({ extended: true, limit: "10Kb" }));
+    app.use("/public", express.static(path.join(process.cwd(), "public")));
     app.use(compression());
     app.use(
-        cors({ origin: "*" , credentials: true }),
+        cors({ origin: "*", credentials: true }),
     );
     app.use(helmet());
     app.use(rateLimiter);

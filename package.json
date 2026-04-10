@@ -41,6 +41,8 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.966.0",
+    "@google/genai": "^1.49.0",
+    "@google/generative-ai": "^0.24.1",
     "axios": "^1.13.5",
     "bcryptjs": "^3.0.2",
     "compression": "^1.8.1",
@@ -69,6 +71,7 @@
     "morgan": "^1.10.1",
     "multer": "^2.0.2",
     "npm": "^11.5.2",
+    "slugify": "^1.6.9",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "ts-cache-mongoose": "^1.7.4",

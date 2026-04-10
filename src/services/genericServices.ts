@@ -93,20 +93,20 @@ class GenericServices<T> {
         args?: any,
     ) {
         try {
-        const { searchBy } = reqQuery;
-        const parsedQuery = buildMongoFilterFromQuery(reqQuery);
-        let deletedFilter = {};
-        if(this.model.schema.paths.deleted){
-            deletedFilter = {deleted: false};
-        }
+            const { searchBy } = reqQuery;
+            const parsedQuery = buildMongoFilterFromQuery(reqQuery);
+            let deletedFilter = {};
+            if (this.model.schema.paths.deleted) {
+                deletedFilter = { deleted: false };
+            }
             let documentsCount = 0;
             if (reqQuery.cache && reqQuery.cache === "true") {
-                documentsCount = await this.model.countDocuments({...reqFilter , ...parsedQuery, ...deletedFilter});
+                documentsCount = await this.model.countDocuments({ ...reqFilter, ...parsedQuery, ...deletedFilter });
             } else {
-                documentsCount = await this.model.countDocuments({...reqFilter , ...parsedQuery, ...deletedFilter});
+                documentsCount = await this.model.countDocuments({ ...reqFilter, ...parsedQuery, ...deletedFilter });
             }
-            let query ;
-            query = this.model.find({...deletedFilter});
+            let query;
+            query = this.model.find({ ...deletedFilter });
             if (populateOption) {
                 query = query.populate(populateOption);
             }
@@ -133,7 +133,7 @@ class GenericServices<T> {
     public async exportExcel(sheetName: string, filter?: any) {
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet(sheetName);
-    
+
         // 1. DYNAMIC POPULATION
         const pathsToPopulate = [];
         this.model.schema.eachPath((path, schemaType) => {
@@ -141,14 +141,14 @@ class GenericServices<T> {
                 pathsToPopulate.push(path);
             }
         });
-    
+
         const rawData = await this.model.find(filter || {}).populate(pathsToPopulate);
-    
+
         if (!rawData || rawData.length === 0) return workbook;
-    
+
         // Convert Mongoose documents to plain objects
         const data = rawData.map(item => item.toObject({ virtuals: false }));
-    
+
         // 2. DEFINE COLUMNS WITH ARABIC MAPPING
         // We map the keys from the first object to the headers in your JSON
         const columns = Object.keys(data[0]).map(key => ({
@@ -157,30 +157,30 @@ class GenericServices<T> {
             width: 25
         }));
         worksheet.columns = columns;
-    
+
         // 3. ROW PROCESSING
         data.forEach(item => {
             const rowValue = {};
-    
+
             // Format each value (dates, arrays, populated objects)
             Object.keys(item).forEach(key => {
                 rowValue[key] = this.formatValue(item[key]);
             });
-    
+
             const row = worksheet.addRow(rowValue);
-            
+
             // Styling the row for Arabic readability
-            row.alignment = { 
-                vertical: 'top', 
-                wrapText: true, 
+            row.alignment = {
+                vertical: 'top',
+                wrapText: true,
                 horizontal: 'right' // Align text to the right for Arabic
             };
         });
-    
+
         // 4. STYLING & SETTINGS
         // Set the worksheet to Right-To-Left
         worksheet.views = [{ rightToLeft: true }];
-    
+
         // Style the Header Row (Row 1)
         const headerRow = worksheet.getRow(1);
         headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
@@ -190,28 +190,28 @@ class GenericServices<T> {
             fgColor: { argb: 'FF4F81BD' } // Professional blue background
         };
         headerRow.alignment = { horizontal: 'center' };
-    
+
         return workbook;
     }
     private formatValue(val: any): any {
         if (val === null || val === undefined) return "";
-    
+
         // Handle Arrays (like addOns or variance)
         if (Array.isArray(val)) {
             return val.map(item => this.formatValue(item)).join(", \n");
         }
-    
+
         // Handle Populated Objects
         if (typeof val === 'object' && !(val instanceof Date)) {
             // If it's a populated Mongoose object, try to find a "human" name
             if (val.name) return val.name;
             if (val.title) return val.title;
             if (val.label) return val.label;
-            
+
             // If it's a sub-object (like variance items), stringify it neatly
-            return JSON.stringify(val).replace(/["{}]/g, ""); 
+            return JSON.stringify(val).replace(/["{}]/g, "");
         }
-    
+
         return val;
     }
 }

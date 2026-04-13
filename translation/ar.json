@@ -103,6 +103,8 @@
     "REQUIRED_FIELD_MESSAGE": "الحقل '{{field}}' مطلوب ولا يمكن أن يكون فارغاً",
     "VALIDATION_ERROR": "خطأ في التحقق للحقل '{{field}}': {{value}}",
     "CAST_ERROR": "تنسيق {{type}} غير صحيح للحقل '{{field}}': '{{value}}'",
+    "chatbot_not_configured": "المساعد غير مهيأ. يرجى المحاولة لاحقاً.",
+    "chatbot_llm_unavailable": "المساعد غير متاح مؤقتاً. يرجى المحاولة بعد قليل.",
     "login": {
       "UNAUTHORIZED": "مطلوب ادخال التوكين",
       "INVALID_SIGNTURE": "التوقيع غير صحيح",

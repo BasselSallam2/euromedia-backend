@@ -5,7 +5,7 @@ const chatbotSchema = new Schema<IChatbot>({
     userId: { type: String, required: true },
     messages: [
         {
-            role: { type: String, enum: ["user", "model"] },
+            role: { type: String, enum: ["user", "assistant", "model"] },
             content: { type: String, required: true },
             timestamp: { type: Date, default: Date.now }
         }

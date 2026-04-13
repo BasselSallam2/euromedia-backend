@@ -103,6 +103,8 @@
     "REQUIRED_FIELD_MESSAGE": "The '{{field}}' field is required and cannot be empty",
     "VALIDATION_ERROR": "Validation error for field '{{field}}': {{value}}",
     "CAST_ERROR": "Invalid {{type}} format for field '{{field}}': '{{value}}'",
+    "chatbot_not_configured": "Chat assistant is not configured. Please try again later.",
+    "chatbot_llm_unavailable": "The assistant is temporarily unavailable. Please try again in a moment.",
     "login": {
       "UNAUTHORIZED": "Token is Required",
       "INVALID_SIGNTURE": "Invalid Signature",

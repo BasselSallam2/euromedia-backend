@@ -19,7 +19,7 @@ export class ChatbotController extends GenericController<typeof chatbotService> 
             return;
         }
 
-        const response = await chatbotService.getGeminiResponse(userId || "anonymous", message);
+        const response = await chatbotService.getGroqResponse(userId || "anonymous", message);
 
         res.status(200).json({
             status: "success",

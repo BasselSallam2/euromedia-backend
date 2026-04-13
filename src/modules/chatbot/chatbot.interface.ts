@@ -1,7 +1,7 @@
 import { Document } from "mongoose";
 
 interface IMessage {
-    role: "user" | "model";
+    role: "user" | "assistant" | "model";
     content: string;
     timestamp?: Date;
 }

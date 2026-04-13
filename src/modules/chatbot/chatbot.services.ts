@@ -1,32 +1,54 @@
 import { ChatbotModel } from "@/modules/chatbot/chatbot.schema";
 import { GenericServices } from "@/services/genericServices";
 import type { IChatbot } from "@modules/chatbot/chatbot.interface";
+import { getRagTopK } from "@modules/chatbot/knowledgeBase.constants";
+import { retrieveRelevantChunks } from "@modules/chatbot/knowledgeBase.vectorSearch";
+import { groqClient } from "@modules/chatbot/groqClient";
+import { ApiError } from "@/utils/apiError";
 import { Model } from "mongoose";
-import { GoogleGenAI } from "@google/genai";
-import fs from "fs";
-import path from "path";
 
-// 1. Initialize GenAI client
-const genAI = new GoogleGenAI({ 
-    apiKey: (process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY) as string
-});
+const CHAT_MODEL = "llama-3.1-8b-instant";
 
-// Cache the Markdown content so it is read from disk only once
-let cachedCatalog: string | null = null;
+function getChatTemperature(): number {
+    const t = Number.parseFloat(process.env.GROQ_CHAT_TEMPERATURE ?? "0.25");
+    return Number.isNaN(t) ? 0.25 : Math.min(2, Math.max(0, t));
+}
 
-function getCatalogContent(): string {
-    if (cachedCatalog !== null) return cachedCatalog;
-    
-    // Path to the new Markdown file we created
-    const mdPath = path.join(process.cwd(), "public/docs/CatalogFinal.md");
-    
-    if (fs.existsSync(mdPath)) {
-        cachedCatalog = fs.readFileSync(mdPath, "utf-8");
-    } else {
-        console.error("Catalog MD file not found at:", mdPath);
-        cachedCatalog = "";
+function getChatMaxTokens(): number {
+    const n = Number.parseInt(process.env.GROQ_CHAT_MAX_TOKENS ?? "1024", 10);
+    const v = Number.isNaN(n) ? 1024 : n;
+    return Math.max(1, v);
+}
+
+const RESPONSE_MARKDOWN_FORMAT = `Response format:
+- Use Markdown: **bold** for product names or titles, bullet lists for specs.
+- Keep layout compact: at most one blank line between sections; do not add extra blank lines between a numbered item and its bullet, or between list items.`;
+
+function buildSystemPrompt(contextChunks: { text: string }[]): string {
+    const k = getRagTopK();
+    const hasContext = contextChunks.length > 0 && contextChunks.some((c) => c.text.trim().length > 0);
+
+    if (!hasContext) {
+        return `You are an expert for Euro Media printing solutions. 
+        Apologize that no catalog data was found for this specific query and suggest contacting support.`;
     }
-    return cachedCatalog;
+
+    const contextBody = contextChunks
+        .slice(0, k)
+        .map((c, i) => `[Excerpt ${i + 1}]: ${c.text}`)
+        .join("\n\n");
+
+    return `You are the Euro Media product catalog assistant.
+    ${RESPONSE_MARKDOWN_FORMAT}
+    
+    Rules:
+    - Use ONLY the provided excerpts to answer (internally—do not tell the user you are doing this).
+    - Do NOT start replies with meta phrases such as "Based on the provided excerpts", "According to the excerpts", "From the catalog", or similar. Begin directly with the answer (e.g. product name, specs, or list).
+    - If the info isn't there, say you don't know briefly—without mentioning excerpts.
+    - Quote specs (dpi, speed) exactly.
+    
+    Knowledge Base Excerpts:
+    ${contextBody}`;
 }
 
 export class ChatbotService extends GenericServices<IChatbot> {
@@ -34,46 +56,52 @@ export class ChatbotService extends GenericServices<IChatbot> {
         super(model);
     }
 
-    async getGeminiResponse(userId: string, userMessage: string) {
-        // 1. Get history or create new session
+    async getGroqResponse(userId: string, userMessage: string) {
         let chatSession = await this.model.findOne({ userId });
         if (!chatSession) {
             chatSession = await this.model.create({ userId, messages: [] });
         }
 
-        const history = chatSession.messages.map(h => ({
-            role: h.role === "user" ? "user" : "model",
-            parts: [{ text: h.content }]
+        const apiKey = process.env.GROQ_API_KEY?.trim();
+        if (!apiKey) {
+            throw new ApiError(503, "errors.chatbot_not_configured");
+        }
+
+        let relevantChunks: { text: string }[] = [];
+        try {
+            relevantChunks = await retrieveRelevantChunks(userMessage);
+        } catch (err) {
+            console.error("[chatbot] Vector search failed:", err);
+        }
+
+        const systemPrompt = buildSystemPrompt(relevantChunks);
+
+        const history = chatSession.messages.map((h) => ({
+            role: (h.role === "user" ? "user" : "assistant") as "user" | "assistant",
+            content: h.content
         }));
 
-        const catalogData = getCatalogContent();
+        let responseText: string;
+        try {
+            const completion = await groqClient.chat.completions.create({
+                model: CHAT_MODEL,
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    ...history,
+                    { role: "user", content: userMessage }
+                ],
+                temperature: getChatTemperature(),
+                max_tokens: getChatMaxTokens(),
+                top_p: 1,
+                stream: false,
+            });
 
-        // 2. Create chat session
-        // Putting catalog in system_instruction is the most token-efficient way
-        const chat = genAI.chats.create({
-            model: "gemini-2.0-flash",
-            config: {
-                systemInstruction: {
-                    parts: [{ 
-                        text: `You are an expert for Euro Media printing solutions. 
-                               Use the following catalog data to answer customer queries:
-                               \n\n${catalogData}\n\n
-                               Provide specific details like resolution and speed accurately.` 
-                    }]
-                }
-            },
-            history
-        });
+            responseText = completion.choices[0]?.message?.content || "";
+        } catch (err) {
+            console.error("[chatbot] Groq completion failed:", err);
+            throw new ApiError(503, "errors.chatbot_llm_unavailable");
+        }
 
-        // 3. Send message
-        // Since the catalog is in the system instructions, we only send the user's text
-        const result = await chat.sendMessage({
-            message: [{ text: userMessage }]
-        });
-
-        const responseText = result.text || "";
-
-        // 4. Save the exchange to MongoDB
         await this.model.updateOne(
             { userId },
             {
@@ -81,7 +109,7 @@ export class ChatbotService extends GenericServices<IChatbot> {
                     messages: {
                         $each: [
                             { role: "user", content: userMessage },
-                            { role: "model", content: responseText }
+                            { role: "assistant", content: responseText }
                         ]
                     }
                 }

@@ -3,7 +3,7 @@ export const permissions = {
     USERCREATE: "user:create",
     USERREAD: "user:read",
     USERUPDATE: "user:update",
-    USERDELETE: "user:delete", 
+    USERDELETE: "user:delete",
     BRANDCREATE: "brand:create",
     BRANDREAD: "brand:read",
     BRANDUPDATE: "brand:update",
@@ -20,5 +20,8 @@ export const permissions = {
     EXHIBITIONREAD: "exhibition:read",
     EXHIBITIONUPDATE: "exhibition:update",
     EXHIBITIONDELETE: "exhibition:delete",
-
+    CONTACTCREATE: "contact:create",
+    CONTACTREAD: "contact:read",
+    CONTACTUPDATE: "contact:update",
+    CONTACTDELETE: "contact:delete",
 } as const;

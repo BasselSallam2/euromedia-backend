@@ -1,13 +1,11 @@
-import { ChatbotModel } from "@/modules/chatbot/chatbot.schema";
-import { GenericServices } from "@/services/genericServices";
-import type { IChatbot } from "@modules/chatbot/chatbot.interface";
 import { getRagTopK } from "@modules/chatbot/knowledgeBase.constants";
 import { retrieveRelevantChunks } from "@modules/chatbot/knowledgeBase.vectorSearch";
 import { groqClient } from "@modules/chatbot/groqClient";
 import { ApiError } from "@/utils/apiError";
-import { Model } from "mongoose";
+import type { IMessage } from "@modules/chatbot/chatbot.interface";
 
 const CHAT_MODEL = "llama-3.1-8b-instant";
+const MAX_HISTORY_MESSAGES = 10; // Keep last 10 messages (5 turns)
 
 function getChatTemperature(): number {
     const t = Number.parseFloat(process.env.GROQ_CHAT_TEMPERATURE ?? "0.25");
@@ -51,17 +49,22 @@ function buildSystemPrompt(contextChunks: { text: string }[]): string {
     ${contextBody}`;
 }
 
-export class ChatbotService extends GenericServices<IChatbot> {
-    constructor(model: Model<IChatbot>) {
-        super(model);
+export class ChatbotService {
+    constructor() { }
+
+    /**
+     * Trims the history to a rolling window to stay within context limits.
+     * Always preserves the System Prompt (added externally during completion).
+     */
+    private trimHistory(history: IMessage[]): IMessage[] {
+        if (!history || history.length <= MAX_HISTORY_MESSAGES) {
+            return history || [];
+        }
+        // Keep the most recent messages
+        return history.slice(-MAX_HISTORY_MESSAGES);
     }
 
-    async getGroqResponse(userId: string, userMessage: string) {
-        let chatSession = await this.model.findOne({ userId });
-        if (!chatSession) {
-            chatSession = await this.model.create({ userId, messages: [] });
-        }
-
+    async getGroqResponse(history: IMessage[], userMessage: string) {
         const apiKey = process.env.GROQ_API_KEY?.trim();
         if (!apiKey) {
             throw new ApiError(503, "errors.chatbot_not_configured");
@@ -76,7 +79,8 @@ export class ChatbotService extends GenericServices<IChatbot> {
 
         const systemPrompt = buildSystemPrompt(relevantChunks);
 
-        const history = chatSession.messages.map((h) => ({
+        // Apply rolling window trimming to incoming history
+        const trimmedHistory = this.trimHistory(history).map((h) => ({
             role: (h.role === "user" ? "user" : "assistant") as "user" | "assistant",
             content: h.content
         }));
@@ -87,7 +91,7 @@ export class ChatbotService extends GenericServices<IChatbot> {
                 model: CHAT_MODEL,
                 messages: [
                     { role: "system", content: systemPrompt },
-                    ...history,
+                    ...trimmedHistory,
                     { role: "user", content: userMessage }
                 ],
                 temperature: getChatTemperature(),
@@ -102,22 +106,8 @@ export class ChatbotService extends GenericServices<IChatbot> {
             throw new ApiError(503, "errors.chatbot_llm_unavailable");
         }
 
-        await this.model.updateOne(
-            { userId },
-            {
-                $push: {
-                    messages: {
-                        $each: [
-                            { role: "user", content: userMessage },
-                            { role: "assistant", content: responseText }
-                        ]
-                    }
-                }
-            }
-        );
-
         return responseText;
     }
 }
 
-export default new ChatbotService(ChatbotModel);
+export default new ChatbotService();

@@ -8,6 +8,7 @@ import categoryRouter from "@modules/category/category.route";
 import productRouter from "@modules/product/product.route";
 import exhibitionRouter from "@modules/exhibition/exhibition.route";
 import chatbotRouter from "@modules/chatbot/chatbot.route";
+import contactRouter from "@modules/contact/contact.route";
 import { Router } from "express";
 
 const router = Router();
@@ -18,6 +19,7 @@ router.use("/category", categoryRouter);
 router.use("/product", productRouter);
 router.use("/exhibition", exhibitionRouter);
 router.use("/upload", uploadRouter);
+router.use("/contact", contactRouter);
 router.use("/chatbot", chatbotRouter);
 router.get("/clearCache", protect, allowedWith(permissions.CACHECLEAR), clearCache);
 

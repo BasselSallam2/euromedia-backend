@@ -13,12 +13,7 @@ import rateLimit from "express-rate-limit";
 import slowDown from "express-slow-down";
 
 import { i18next } from "@config/i18n";
-
 import * as middleware from "i18next-http-middleware";
-
-
-
-
 
 const rateLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -33,9 +28,6 @@ const speedLimiter = slowDown({
 });
 
 function Appuse(app: Express) {
-
-
-
     app.use(middleware.handle(i18next));
     app.use(cookieParser("secret-key"));
     app.use(express.json({ limit: "10Kb" }));

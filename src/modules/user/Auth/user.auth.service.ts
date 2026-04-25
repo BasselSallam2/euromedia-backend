@@ -15,7 +15,7 @@ class AuthService extends UserService {
     }
     public async signin(email: string, password: string, t: TFunction) {
         const user = await UserModel.findOne({ email })
-            .select("email password")
+            .select("email password name")
             .lean()
             .exec();
         if (!user) {
@@ -26,9 +26,9 @@ class AuthService extends UserService {
             throw new ApiError(401, "errors.login.INVALID_CREDENTIALS", t);
         }
         const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET as string, { expiresIn: tokenTTL });
-        return token;
+        return { token, user: { name: user.name, email: user.email } };
     }
-    
+
     async getMe(userId: Types.ObjectId) {
         const user = await UserModel.findById(userId);
         if (!user) {

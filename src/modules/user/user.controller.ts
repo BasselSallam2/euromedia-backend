@@ -1,4 +1,5 @@
 import userService from "@modules/user/user.services";
+import { UserModel } from "@modules/user/user.schema";
 import { GenericController } from "@shared/genericController";
 import type { Request, Response, NextFunction } from "express";
 import asyncHandler from "express-async-handler";
@@ -10,60 +11,39 @@ import { Types } from "mongoose";
 export class UserController extends GenericController<typeof userService> {
     constructor() {
         super(userService);
-       
     }
-    createAddress = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+
+    createAdmin = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const { _id } = req.user as { _id: string };
-            const { address , appartmentNumber  , city , area , location , additionalPhoneNumber } = req.body;
-            const user = await userService.createAddress(_id , { address , appartmentNumber , city , area , location , additionalPhoneNumber });
-            apiResponse.success(res , req.t, 200, "Address_created_successfully");
-            return;
+            const document = await userService.createAdmin(req.body);
+            apiResponse.success(res, req.t, 201, "Created_Successfully", { _id: document._id });
         } catch (error) {
             next(error);
         }
     });
 
-    deleteAddress = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    deleteById = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const { _id } = req.user as { _id: string };
-            const { addressId } = req.params as { addressId: string };
-            if(!addressId || !Types.ObjectId.isValid(addressId)) {
-                next(new ApiError(400, "errors.INVALID_ADDRESS_ID"));
+            const { id } = req.params as { id: string };
+            if (!id || !Types.ObjectId.isValid(id)) {
+                apiResponse.notFound(res, req.t);
+                return;
             }
-            await userService.deleteAddress(_id, addressId);
-            apiResponse.success(res , req.t, 200, "Address_deleted_successfully");
-            return;
+            const user = await UserModel.findById(id).select("email").lean();
+            if (!user) {
+                apiResponse.notFound(res, req.t);
+                return;
+            }
+            if (user.email === process.env.ADMIN_EMAIL) {
+                throw new ApiError(403, "This account cannot be deleted.");
+            }
+            await userService.deleteById(id);
+            apiResponse.deleteOne(res, req.t, id);
         } catch (error) {
             next(error);
         }
     });
-
-    getAddresses = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-        try {
-            const { _id } = req.user as { _id: string };
-            const addresses = await userService.getAddresses(_id);
-            apiResponse.getOne(res , addresses);
-            return;
-        } catch (error) {
-            next(error);
-        }
-    });
-
-    editAddress = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-        try {
-            const { _id } = req.user as { _id: string };
-            const { addressId } = req.params as { addressId: string };
-            const { address , appartmentNumber , city , area , location , additionalPhoneNumber } = req.body;
-            await userService.editAddress(_id, addressId, { address , appartmentNumber , city , area , location , additionalPhoneNumber });
-            apiResponse.success(res , req.t, 200, "Address_edited_successfully");
-            return;
-        } catch (error) {
-            next(error);
-        }
-    });
-
-
+ 
 }
 
 export default new UserController();

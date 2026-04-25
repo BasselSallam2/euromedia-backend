@@ -7,7 +7,7 @@ interface IMessage {
 }
 
 interface IChatbot extends Document {
-    userId: string;
+    identifier: string; // Web Session ID or WhatsApp Phone Number
     messages: IMessage[];
 }
 

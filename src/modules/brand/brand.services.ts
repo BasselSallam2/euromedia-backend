@@ -7,7 +7,6 @@ export class BrandService extends GenericServices<IBrand> {
         super(model);
     }
 
-
 }
 
 export default new BrandService(BrandModel);

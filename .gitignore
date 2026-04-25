@@ -38,5 +38,12 @@ package-lockon
 bun.lock
 pnpm-lock.yaml
 package-lock.json
+
+# Chrome for Testing binary (downloaded by setup:chrome)
+.chrome-for-testing/
+# WhatsApp session cache
+.wwebjs_auth/
+# Corrupted Chrome zips from previous attempts
+chrome/
 .hbs
 .js

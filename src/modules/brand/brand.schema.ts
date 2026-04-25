@@ -13,7 +13,6 @@ const brandSchema = new Schema<IBrand>(
     },
 );
 
-
 const BrandModel = model<IBrand>("Brand", brandSchema);
 
 export { BrandModel };

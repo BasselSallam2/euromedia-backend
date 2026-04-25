@@ -12,19 +12,19 @@ class AuthController {
         try {
             const { email, password } = req.body;
             const t = req.t;
-            const token = await AuthService.signin(email, password, t);
-           apiResponse.success(res , req.t, 200, "login_successfully" , { token });
-           return;
+            const result = await AuthService.signin(email, password, t);
+            apiResponse.success(res, req.t, 200, "login_successfully", result);
+            return;
         } catch (error) {
             next(error);
         }
     });
- 
+
     getMe = async (req: Request, res: Response, next: NextFunction) => {
         try {
             const { _id } = req.user as { _id: Types.ObjectId };
             const user = await AuthService.getMe(_id);
-            return apiResponse.getOne(res , user)
+            return apiResponse.getOne(res, user)
         } catch (error) {
             next(error);
         }

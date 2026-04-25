@@ -3,9 +3,20 @@ import "dotenv/config";
 import mongoose from "mongoose";
 import app from "./app";
 import { defaultSeeders } from "./seeders/defualtSeeders";
+import { createServer } from "http";
+import { Server } from "socket.io";
+import whatsappService from "@modules/chatbot/whatsapp/whatsapp.service";
 
 const PORT = process.env.PORT || 3000;
 const FLUSH_DB = process.argv.includes("--flush");
+
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+    cors: {
+        origin: "*",
+        methods: ["GET", "POST"]
+    }
+});
 
 const startServer = async () => {
     if (process.env.NODE_ENV === "DEVELOPMENT") {
@@ -13,6 +24,8 @@ const startServer = async () => {
     }
     await connectDB(process.env.MONGO_URI!);
     console.log("FLUSH_DB", FLUSH_DB);
+
+    // ... existing flush and seeder logic ...
     if (FLUSH_DB) {
         const conn = mongoose.connection;
         const collections = await conn.db.listCollections().toArray();
@@ -31,8 +44,17 @@ const startServer = async () => {
             throw err;
         }
     }
-    app.listen(PORT, () => {
+
+    httpServer.listen(PORT, () => {
         console.log(`Server is running on port ${PORT}`);
+
+        // Initialize WhatsApp in the background
+        console.log("[WhatsApp] Attempting to initialize...");
+        whatsappService.initialize(io).then(() => {
+            console.log("[WhatsApp] Initialization function completed.");
+        }).catch((err) => {
+            console.error("[WhatsApp] Failed to initialize:", err);
+        });
     });
 };
 

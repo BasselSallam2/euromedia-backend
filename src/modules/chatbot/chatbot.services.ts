@@ -3,6 +3,8 @@ import { retrieveRelevantChunks } from "@modules/chatbot/knowledgeBase.vectorSea
 import { groqClient } from "@modules/chatbot/groqClient";
 import { ApiError } from "@/utils/apiError";
 import type { IMessage } from "@modules/chatbot/chatbot.interface";
+import Chatbot from "@modules/chatbot/chatbot.model";
+
 
 const CHAT_MODEL = "llama-3.1-8b-instant";
 const MAX_HISTORY_MESSAGES = 10; // Keep last 10 messages (5 turns)
@@ -107,6 +109,37 @@ export class ChatbotService {
         }
 
         return responseText;
+    }
+
+    async handleChat(query: string, identifier: string) {
+        // 1. Fetch history from MongoDB
+        let chatbot = await Chatbot.findOne({ identifier });
+
+        if (!chatbot) {
+            chatbot = new Chatbot({ identifier, messages: [] });
+        }
+
+        // 2. Pass history and query to existing LangChain/Groq RAG flow
+        const history = chatbot.messages.map(m => ({
+            role: m.role,
+            content: m.content
+        })) as IMessage[];
+
+        const response = await this.getGroqResponse(history, query);
+
+        // 3. Update history with the new user message and AI response
+        chatbot.messages.push({ role: "user", content: query, timestamp: new Date() });
+        chatbot.messages.push({ role: "assistant", content: response, timestamp: new Date() });
+
+        // Keep last 10 messages (5 turns)
+        if (chatbot.messages.length > MAX_HISTORY_MESSAGES) {
+            chatbot.messages = chatbot.messages.slice(-MAX_HISTORY_MESSAGES);
+        }
+
+        // 4. Save updated history back to DB
+        await chatbot.save();
+
+        return response;
     }
 }
 

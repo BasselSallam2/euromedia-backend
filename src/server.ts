@@ -47,14 +47,9 @@ const startServer = async () => {
 
     httpServer.listen(PORT, () => {
         console.log(`Server is running on port ${PORT}`);
-
-        // Initialize WhatsApp in the background
-        console.log("[WhatsApp] Attempting to initialize...");
-        whatsappService.initialize(io).then(() => {
-            console.log("[WhatsApp] Initialization function completed.");
-        }).catch((err) => {
-            console.error("[WhatsApp] Failed to initialize:", err);
-        });
+        // Store the Socket.IO server so the WhatsApp service can emit events
+        // when the admin starts it from the dashboard. Do NOT auto-initialize.
+        whatsappService.setIo(io);
     });
 };
 

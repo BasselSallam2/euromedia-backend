@@ -10,6 +10,21 @@ export class CompanyService extends GenericServices<ICompany> {
         super(model);
     }
 
+    async getSelf() {
+        return this.model.findOne({ isOwner: true }).lean();
+    }
+
+    async updateSelfLogo(logo: string) {
+        return this.model.findOneAndUpdate(
+            { isOwner: true },
+            {
+                $set: { logo },
+                $setOnInsert: { name: "Euro Media Shine", isOwner: true },
+            },
+            { new: true, upsert: true }
+        );
+    }
+
     async captureLead(data: {
         personName: string;
         email: string;
@@ -56,11 +71,19 @@ export class CompanyService extends GenericServices<ICompany> {
             companyId: companyId || undefined,
         });
 
-        // Send Thank You Email (non-blocking)
+        // Send Thank You Email to User (non-blocking)
         ContactService.sendThankYouEmail({
             name: data.personName,
             email: data.email,
         }).catch((err) => console.error("[CompanyService] Failed to send thank you email:", err));
+
+        // Send Inquiry Notification to Admin (non-blocking)
+        const inquiryMessage = data.metadata?.notes || data.metadata?.message || data.metadata?.interest || "No detailed inquiry provided.";
+        ContactService.sendInquiryNotification({
+            name: data.personName,
+            email: data.email,
+            inquiry: inquiryMessage,
+        }).catch((err) => console.error("[CompanyService] Failed to send admin notification:", err));
 
         return { customer, companyId };
     }

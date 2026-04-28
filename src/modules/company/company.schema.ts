@@ -9,6 +9,7 @@ const companySchema = new Schema<ICompany>(
         phoneNumber: { type: String },
         logo: { type: String },
         website: { type: String },
+        isOwner: { type: Boolean, default: false },
         metadata: { type: Schema.Types.Mixed },
     },
     {

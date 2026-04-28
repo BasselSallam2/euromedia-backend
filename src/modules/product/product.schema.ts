@@ -1,4 +1,4 @@
-import type { IProduct } from "@/modules/product/product.interface";
+import type { IProduct } from "./product.interface";
 import { Schema, model } from "mongoose";
 
 
@@ -12,6 +12,12 @@ const productSchema = new Schema<IProduct>(
         images: { type: [String] },
         metadata: { type: Schema.Types.Mixed },
         category: { type: Schema.Types.ObjectId, ref: "Category" },
+        printHeadType: { type: String },
+        printHeadQty: { type: String },
+        maxResolution: { type: String },
+        printSpeed: { type: String },
+        maxPrintWidth: { type: String },
+        inkType: { type: String },
     },
     {
         timestamps: true,

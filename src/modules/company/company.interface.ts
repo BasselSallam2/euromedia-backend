@@ -7,6 +7,7 @@ export interface ICompany extends Document {
     phoneNumber?: string;
     logo?: string;
     website?: string;
+    isOwner?: boolean;
     metadata?: Record<string, any>;
     createdAt: Date;
     updatedAt: Date;

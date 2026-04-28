@@ -27,6 +27,7 @@
         },
         "noUnusedLocals": false,
         "noUnusedParameters": false,
-        "noPropertyAccessFromIndexSignature": false
+        "noPropertyAccessFromIndexSignature": false,
+        "skipLibCheck": true
     }
 }

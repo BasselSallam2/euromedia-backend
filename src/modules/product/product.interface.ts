@@ -9,6 +9,12 @@ interface IProduct extends Document {
     images: string[];
     metadata: any;
     category: Types.ObjectId;
+    printHeadType?: string;
+    printHeadQty?: string;
+    maxResolution?: string;
+    printSpeed?: string;
+    maxPrintWidth?: string;
+    inkType?: string;
 }
 
 

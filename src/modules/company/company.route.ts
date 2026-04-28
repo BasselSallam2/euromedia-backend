@@ -8,6 +8,10 @@ const router = Router();
 // Public route for lead capture
 router.post("/capture-lead", captureLeadValidation, CompanyController.captureLead);
 
+// Self-branding (Euro Media's own company record)
+router.get("/self", CompanyController.getSelf);
+router.patch("/self/logo", protect, CompanyController.updateSelfLogo);
+
 router.route("/")
     .post(protect, allowedWith(permissions.COMPANYCREATE), companyValidation, CompanyController.createOne)
     .get(protect, allowedWith(permissions.COMPANYREAD), CompanyController.getAll);
